@@ -1,0 +1,13 @@
+services:
+  einsmal-eins-expedition:
+    image: ${EINSMAL_EINS_EXPEDITION_IMAGE:-ghcr.io/elfiboewer/einsmal-eins-expedition:main}
+    container_name: einsmal-eins-expedition
+    restart: unless-stopped
+    ports:
+      - "${EINSMAL_EINS_EXPEDITION_PORT:-8089}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

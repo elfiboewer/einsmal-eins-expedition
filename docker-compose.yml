@@ -1,0 +1,9 @@
+services:
+  einsmal-eins-expedition:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: einsmal-eins-expedition
+    ports:
+      - "8089:8080"
+    restart: unless-stopped

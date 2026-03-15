@@ -1,0 +1,15 @@
+export const palette = {
+  accent: "#0f766e",
+  accentPressed: "#115e59",
+  accentSoft: "#d2f4ee",
+  accentStrong: "#115e59",
+  canvas: "#fff7e8",
+  coralSoft: "#ffe1e6",
+  ink: "#112031",
+  line: "#ecd3b3",
+  mintSoft: "#dff9ef",
+  muted: "#5f6b76",
+  surface: "#fffdf8",
+  surfaceAlt: "#f8efe1",
+  sunSoft: "#fff0c9",
+} as const;
