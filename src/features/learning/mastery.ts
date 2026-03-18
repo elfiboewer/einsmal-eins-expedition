@@ -28,11 +28,15 @@ export type AnswerFeedback = {
   selectedAnswer: number;
 };
 
+export type LearningSessionMode = "learn" | "quiz";
+
 export type SessionSummary = {
+  completedAt: string;
   correctCount: number;
   fastestAnswerMs: number | null;
   label: string;
   length: number;
+  mode: LearningSessionMode;
   starCount: number;
 };
 
@@ -133,7 +137,8 @@ export function getRecommendedFocus(
 
 export function summarizeSession(
   focus: FamilyFocus,
-  feedbackItems: AnswerFeedback[]
+  feedbackItems: AnswerFeedback[],
+  mode: LearningSessionMode = "quiz"
 ): SessionSummary {
   const correctCount = feedbackItems.filter((item) => item.correct).length;
   const accuracy =
@@ -145,10 +150,12 @@ export function summarizeSession(
       : Math.min(...feedbackItems.map((item) => item.responseMs));
 
   return {
+    completedAt: new Date().toISOString(),
     correctCount,
     fastestAnswerMs,
     label: focus === "mixed" ? "Gemischte Runde" : `${focus}er-Reihe`,
     length: feedbackItems.length,
+    mode,
     starCount,
   };
 }

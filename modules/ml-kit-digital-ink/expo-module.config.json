@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["MlKitDigitalInkModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.mlkitdigitalink.MlKitDigitalInkModule"]
+  }
+}

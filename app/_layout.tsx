@@ -58,6 +58,9 @@ function AppStack() {
         }}
       >
         <Stack.Screen name="index" options={{ title: "1x1-Expedition" }} />
+        <Stack.Screen name="mode-select" options={{ title: "Modus wahlen" }} />
+        <Stack.Screen name="learning-mode" options={{ title: "Lernmodus" }} />
+        <Stack.Screen name="speaking-mode" options={{ title: "Sprechmodus" }} />
         <Stack.Screen name="training" options={{ title: "Training" }} />
         <Stack.Screen name="map" options={{ title: "Inselkarte" }} />
         <Stack.Screen name="stickers" options={{ title: "Stickeralbum" }} />

@@ -1,20 +1,37 @@
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, useWindowDimensions, View } from "react-native";
 
 import { SurfaceCard } from "@/components/surface-card";
+import {
+  CLASSIC_FAMILIES,
+  type FamilyFocus,
+  getFocusTheme,
+} from "@/features/learning/facts";
 import { useLearning } from "@/features/learning/provider";
 import { palette } from "@/theme/palette";
 
-const STICKER_COLLECTION = [
-  { id: "komet", title: "Komet", tint: "#d7fbef" },
-  { id: "krone", title: "Krone", tint: "#fff1c7" },
-  { id: "insel", title: "Insel", tint: "#dfeaff" },
-  { id: "rakete", title: "Rakete", tint: "#ffe0dc" },
-  { id: "stern", title: "Stern", tint: "#f0facf" },
-  { id: "turm", title: "Turm", tint: "#ffdff0" },
+const STICKER_COLLECTION: Array<{
+  focus: FamilyFocus;
+  id: string;
+  subtitle: string;
+  title: string;
+}> = [
+  { focus: 1, id: "wiesen-1", subtitle: "Startersticker", title: "Wiesenflitzer" },
+  { focus: 2, id: "funkel-2", subtitle: "Doppelte Power", title: "Funkel-Fuchs" },
+  { focus: 3, id: "wellen-3", subtitle: "Rhythmus im Kopf", title: "Wellen-Wal" },
+  { focus: 4, id: "feuer-4", subtitle: "Vier gewinnt", title: "Feuerfalke" },
+  { focus: 5, id: "blatt-5", subtitle: "Im Fuenfertakt", title: "Blatt-Biber" },
+  { focus: 6, id: "kisten-6", subtitle: "Hafenmeister", title: "Kisten-Kapitain" },
+  { focus: 7, id: "himmel-7", subtitle: "Mutige Reihe", title: "Himmels-Hai" },
+  { focus: 8, id: "glitzer-8", subtitle: "Achter-Schwung", title: "Glitzer-Gecko" },
+  { focus: 9, id: "wald-9", subtitle: "Knifflig und stark", title: "Wald-Wirbler" },
+  { focus: 10, id: "raketen-10", subtitle: "Turbo-Zehner", title: "Raketen-Rabe" },
+  { focus: "mixed", id: "meister-mix", subtitle: "Alles durcheinander", title: "Mix-Meister" },
 ];
 
 export default function StickersScreen() {
-  const { stickerCount } = useLearning();
+  const { width } = useWindowDimensions();
+  const { getFocusProgress, overallProgress, stickerCount } = useLearning();
+  const tileWidth = width < 540 ? "100%" : width < 860 ? "48.5%" : "31.8%";
 
   return (
     <ScrollView
@@ -30,11 +47,11 @@ export default function StickersScreen() {
           Stickeralbum
         </Text>
         <Text style={{ color: palette.ink, fontSize: 28, fontWeight: "900" }}>
-          {stickerCount} Sticker gesammelt
+          {stickerCount} von {STICKER_COLLECTION.length} Stickern gesammelt
         </Text>
         <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 22 }}>
-          Hier landen die Belohnungen fur gespielte Reihen. Mit mehr Training
-          wird das Album voller.
+          Fur jede Reihe gibt es jetzt einen eigenen Sticker. Wenn eine Reihe
+          sicher sitzt, wird ihr Albumfeld freigeschaltet.
         </Text>
       </SurfaceCard>
 
@@ -45,43 +62,60 @@ export default function StickersScreen() {
           gap: 12,
         }}
       >
-        {STICKER_COLLECTION.map((sticker, index) => {
-          const unlocked = index < stickerCount;
+        {STICKER_COLLECTION.map((sticker) => {
+          const theme = getFocusTheme(sticker.focus);
+          const unlocked =
+            sticker.focus === "mixed"
+              ? overallProgress >= 0.92
+              : getFocusProgress(sticker.focus) >= 0.85;
 
           return (
             <View
               key={sticker.id}
               style={{
-                width: "48.5%",
-                minHeight: 156,
+                overflow: "hidden",
+                width: tileWidth,
+                minHeight: 176,
                 justifyContent: "space-between",
                 borderRadius: 28,
                 borderCurve: "continuous",
                 borderWidth: 1,
-                borderColor: palette.line,
-                backgroundColor: unlocked ? sticker.tint : palette.surfaceAlt,
+                borderColor: unlocked ? `${theme.accent}22` : palette.line,
+                backgroundColor: unlocked ? theme.surface : palette.surfaceAlt,
                 boxShadow: "0 12px 28px rgba(17, 32, 49, 0.08)",
                 padding: 16,
               }}
             >
               <View
                 style={{
+                  position: "absolute",
+                  top: -18,
+                  right: -12,
+                  height: 82,
+                  width: 82,
+                  borderRadius: 999,
+                  backgroundColor: unlocked ? `${theme.badge}33` : "#f1e6d5",
+                }}
+              />
+              <View
+                style={{
                   height: 54,
-                  width: 54,
+                  minWidth: 54,
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: 18,
-                  backgroundColor: unlocked ? palette.surface : "#f1e6d5",
+                  backgroundColor: unlocked ? theme.badge : "#f1e6d5",
+                  paddingHorizontal: 12,
                 }}
               >
                 <Text
                   style={{
-                    color: unlocked ? palette.ink : palette.muted,
-                    fontSize: 20,
+                    color: unlocked ? "#ffffff" : palette.muted,
+                    fontSize: sticker.focus === "mixed" ? 16 : 20,
                     fontWeight: "900",
                   }}
                 >
-                  {index + 1}
+                  {sticker.focus === "mixed" ? "Mix" : `${sticker.focus}`}
                 </Text>
               </View>
 
@@ -97,12 +131,25 @@ export default function StickersScreen() {
                 </Text>
                 <Text
                   style={{
+                    color: unlocked ? theme.accent : palette.muted,
+                    fontSize: 13,
+                    fontWeight: "800",
+                  }}
+                >
+                  {sticker.subtitle}
+                </Text>
+                <Text
+                  style={{
                     color: palette.muted,
                     fontSize: 14,
                     lineHeight: 20,
                   }}
                 >
-                  {unlocked ? "Freigeschaltet" : "Noch gesperrt"}
+                  {unlocked
+                    ? "Freigeschaltet"
+                    : sticker.focus === "mixed"
+                      ? "Wird frei, wenn fast alles sitzt"
+                      : "Wird frei ab 85% Fortschritt in dieser Reihe"}
                 </Text>
               </View>
             </View>

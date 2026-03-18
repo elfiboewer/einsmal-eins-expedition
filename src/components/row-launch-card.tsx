@@ -10,6 +10,7 @@ import {
 import { palette } from "@/theme/palette";
 
 type RowLaunchCardProps = {
+  compact?: boolean;
   focus: FamilyFocus;
   onPress: () => void;
   progress: number;
@@ -17,6 +18,7 @@ type RowLaunchCardProps = {
 };
 
 export function RowLaunchCard({
+  compact = false,
   focus,
   onPress,
   progress,
@@ -29,9 +31,9 @@ export function RowLaunchCard({
       onPress={onPress}
       style={({ pressed }) => ({
         width,
-        minHeight: 156,
+        minHeight: compact ? 128 : 156,
         justifyContent: "space-between",
-        gap: 14,
+        gap: compact ? 12 : 14,
         borderRadius: 28,
         borderCurve: "continuous",
         borderWidth: 1,
@@ -39,7 +41,7 @@ export function RowLaunchCard({
         backgroundColor: theme.surface,
         boxShadow: "0 14px 30px rgba(17, 32, 49, 0.08)",
         opacity: pressed ? 0.92 : 1,
-        padding: 16,
+        padding: compact ? 14 : 16,
         transform: [{ scale: pressed ? 0.985 : 1 }],
       })}
     >
@@ -57,14 +59,14 @@ export function RowLaunchCard({
             borderRadius: 18,
             borderCurve: "continuous",
             backgroundColor: theme.badge,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
+            paddingHorizontal: compact ? 12 : 14,
+            paddingVertical: compact ? 8 : 10,
           }}
         >
           <Text
             style={{
               color: "#ffffff",
-              fontSize: focus === "mixed" ? 18 : 24,
+              fontSize: focus === "mixed" ? (compact ? 16 : 18) : compact ? 22 : 24,
               fontWeight: "900",
             }}
           >
@@ -74,7 +76,7 @@ export function RowLaunchCard({
         <Text
           style={{
             color: theme.accent,
-            fontSize: 13,
+            fontSize: compact ? 12 : 13,
             fontVariant: ["tabular-nums"],
             fontWeight: "800",
           }}
@@ -87,7 +89,7 @@ export function RowLaunchCard({
         <Text
           style={{
             color: palette.ink,
-            fontSize: 22,
+            fontSize: compact ? 20 : 22,
             fontWeight: "900",
           }}
         >
@@ -96,8 +98,8 @@ export function RowLaunchCard({
         <Text
           style={{
             color: palette.muted,
-            fontSize: 14,
-            lineHeight: 20,
+            fontSize: compact ? 13 : 14,
+            lineHeight: compact ? 18 : 20,
           }}
         >
           {focus === "mixed"
@@ -111,7 +113,7 @@ export function RowLaunchCard({
         <Text
           style={{
             color: theme.accent,
-            fontSize: 13,
+            fontSize: compact ? 12 : 13,
             fontWeight: "800",
           }}
         >

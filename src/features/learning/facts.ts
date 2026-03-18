@@ -102,6 +102,10 @@ export function formatFamilyLabel(focus: FamilyFocus) {
   return focus === "mixed" ? "gemischte Runde" : `${focus}er-Reihe`;
 }
 
+export function formatFactExpression(fact: Pick<MultiplicationFact, "left" | "right">) {
+  return `${fact.right} x ${fact.left}`;
+}
+
 export function getFactsForFocus(focus: FamilyFocus) {
   if (focus === "mixed") {
     return ALL_TRAINING_FACTS;
@@ -119,70 +123,70 @@ export function getFocusTheme(focus: FamilyFocus): FocusTheme {
     1: {
       accent: "#0f766e",
       badge: "#0f766e",
-      subtitle: "1 x 1 bis 1 x 10",
+      subtitle: "1 x 1 bis 10 x 1",
       surface: "#d4f7ef",
       title: "1er-Reihe",
     },
     2: {
       accent: "#d97706",
       badge: "#f59e0b",
-      subtitle: "2 x 1 bis 2 x 10",
+      subtitle: "1 x 2 bis 10 x 2",
       surface: "#fff0bf",
       title: "2er-Reihe",
     },
     3: {
       accent: "#0284c7",
       badge: "#38bdf8",
-      subtitle: "3 x 1 bis 3 x 10",
+      subtitle: "1 x 3 bis 10 x 3",
       surface: "#dff2ff",
       title: "3er-Reihe",
     },
     4: {
       accent: "#dc2626",
       badge: "#fb7185",
-      subtitle: "4 x 1 bis 4 x 10",
+      subtitle: "1 x 4 bis 10 x 4",
       surface: "#ffe0dc",
       title: "4er-Reihe",
     },
     5: {
       accent: "#4d7c0f",
       badge: "#84cc16",
-      subtitle: "5 x 1 bis 5 x 10",
+      subtitle: "1 x 5 bis 10 x 5",
       surface: "#e6f8db",
       title: "5er-Reihe",
     },
     6: {
       accent: "#ea580c",
       badge: "#fb923c",
-      subtitle: "6 x 1 bis 6 x 10",
+      subtitle: "1 x 6 bis 10 x 6",
       surface: "#ffe6cf",
       title: "6er-Reihe",
     },
     7: {
       accent: "#2563eb",
       badge: "#60a5fa",
-      subtitle: "7 x 1 bis 7 x 10",
+      subtitle: "1 x 7 bis 10 x 7",
       surface: "#dfeaff",
       title: "7er-Reihe",
     },
     8: {
       accent: "#db2777",
       badge: "#f472b6",
-      subtitle: "8 x 1 bis 8 x 10",
+      subtitle: "1 x 8 bis 10 x 8",
       surface: "#ffdff0",
       title: "8er-Reihe",
     },
     9: {
       accent: "#65a30d",
       badge: "#a3e635",
-      subtitle: "9 x 1 bis 9 x 10",
+      subtitle: "1 x 9 bis 10 x 9",
       surface: "#f0facf",
       title: "9er-Reihe",
     },
     10: {
       accent: "#b45309",
       badge: "#fbbf24",
-      subtitle: "10 x 1 bis 10 x 10",
+      subtitle: "1 x 10 bis 10 x 10",
       surface: "#fff2c8",
       title: "10er-Reihe",
     },

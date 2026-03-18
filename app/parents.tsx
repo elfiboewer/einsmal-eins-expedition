@@ -3,6 +3,7 @@ import { ScrollView, Text, View } from "react-native";
 import { SurfaceCard } from "@/components/surface-card";
 import {
   CLASSIC_FAMILIES,
+  formatFactExpression,
   formatFamilyLabel,
 } from "@/features/learning/facts";
 import { useLearning } from "@/features/learning/provider";
@@ -12,6 +13,7 @@ export default function ParentsScreen() {
   const {
     getFocusProgress,
     lastCompletedSession,
+    lastCompletedSessions,
     masteredFactCount,
     totalFactCount,
     weakFacts,
@@ -104,7 +106,7 @@ export default function ParentsScreen() {
                 }}
               >
                 <Text style={{ color: palette.ink, fontSize: 17, fontWeight: "800" }}>
-                  {fact.left} x {fact.right}
+                  {formatFactExpression(fact)}
                 </Text>
                 <Text
                   style={{
@@ -137,6 +139,9 @@ export default function ParentsScreen() {
               Fokus: {lastCompletedSession.label}
             </Text>
             <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 22 }}>
+              Modus: {lastCompletedSession.mode === "learn" ? "Lernmodus" : "Quizmodus"}
+            </Text>
+            <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 22 }}>
               Treffer: {lastCompletedSession.correctCount}/{lastCompletedSession.length}
             </Text>
             <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 22 }}>
@@ -149,6 +154,64 @@ export default function ParentsScreen() {
           </Text>
         )}
       </SurfaceCard>
+
+      <SurfaceCard>
+        <Text style={{ color: palette.ink, fontSize: 20, fontWeight: "800" }}>
+          Modi im Vergleich
+        </Text>
+        <View style={{ gap: 10 }}>
+          <ModeSummaryCard
+            summary={lastCompletedSessions.quiz}
+            title="Quizmodus"
+          />
+          <ModeSummaryCard
+            summary={lastCompletedSessions.learn}
+            title="Lernmodus"
+          />
+        </View>
+      </SurfaceCard>
     </ScrollView>
+  );
+}
+
+function ModeSummaryCard({
+  summary,
+  title,
+}: {
+  summary: ReturnType<typeof useLearning>["lastCompletedSession"];
+  title: string;
+}) {
+  return (
+    <View
+      style={{
+        gap: 4,
+        borderRadius: 18,
+        borderCurve: "continuous",
+        backgroundColor: palette.surfaceAlt,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+      }}
+    >
+      <Text style={{ color: palette.ink, fontSize: 16, fontWeight: "800" }}>
+        {title}
+      </Text>
+      {summary ? (
+        <>
+          <Text style={{ color: palette.muted, fontSize: 14, lineHeight: 20 }}>
+            {summary.label}
+          </Text>
+          <Text style={{ color: palette.muted, fontSize: 14, lineHeight: 20 }}>
+            Treffer: {summary.correctCount}/{summary.length}
+          </Text>
+          <Text style={{ color: palette.muted, fontSize: 14, lineHeight: 20 }}>
+            Sterne: {summary.starCount}
+          </Text>
+        </>
+      ) : (
+        <Text style={{ color: palette.muted, fontSize: 14, lineHeight: 20 }}>
+          Noch keine gespeicherte Runde in diesem Modus.
+        </Text>
+      )}
+    </View>
   );
 }

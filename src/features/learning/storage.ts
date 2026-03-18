@@ -7,6 +7,10 @@ import {
 
 type StoredLearningState = {
   lastCompletedSession: SessionSummary | null;
+  lastCompletedSessions?: {
+    learn: SessionSummary | null;
+    quiz: SessionSummary | null;
+  };
   masteryMap: Record<string, MasteryRecord>;
 };
 
@@ -17,7 +21,20 @@ export async function loadStoredLearningState(): Promise<StoredLearningState | n
     if (canUseLocalStorage()) {
       const rawValue = localStorage.getItem(STORAGE_KEY);
 
-      return rawValue ? (JSON.parse(rawValue) as StoredLearningState) : null;
+      if (!rawValue) {
+        return null;
+      }
+
+      const parsedState = JSON.parse(rawValue) as StoredLearningState;
+
+      return {
+        ...parsedState,
+        lastCompletedSession: normalizeStoredSummary(parsedState.lastCompletedSession),
+        lastCompletedSessions: normalizeStoredSummaries(
+          parsedState.lastCompletedSessions,
+          parsedState.lastCompletedSession
+        ),
+      };
     }
 
     const storageFile = getNativeStorageFile();
@@ -28,7 +45,20 @@ export async function loadStoredLearningState(): Promise<StoredLearningState | n
 
     const rawValue = await storageFile.text();
 
-    return rawValue ? (JSON.parse(rawValue) as StoredLearningState) : null;
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedState = JSON.parse(rawValue) as StoredLearningState;
+
+    return {
+      ...parsedState,
+      lastCompletedSession: normalizeStoredSummary(parsedState.lastCompletedSession),
+      lastCompletedSessions: normalizeStoredSummaries(
+        parsedState.lastCompletedSessions,
+        parsedState.lastCompletedSession
+      ),
+    };
   } catch {
     return null;
   }
@@ -68,4 +98,41 @@ function getNativeStorageFile() {
     "einsmal-eins-expedition",
     "learning-state.json"
   );
+}
+
+function normalizeStoredSummary(summary: SessionSummary | null | undefined) {
+  if (!summary) {
+    return null;
+  }
+
+  return {
+    ...summary,
+    completedAt: summary.completedAt ?? new Date(0).toISOString(),
+    mode: summary.mode ?? "quiz",
+  };
+}
+
+function normalizeStoredSummaries(
+  summaries:
+    | {
+        learn: SessionSummary | null;
+        quiz: SessionSummary | null;
+      }
+    | undefined,
+  fallbackSummary: SessionSummary | null | undefined
+) {
+  const normalizedSummaries = {
+    learn: normalizeStoredSummary(summaries?.learn),
+    quiz: normalizeStoredSummary(summaries?.quiz),
+  };
+
+  if (!normalizedSummaries.learn && !normalizedSummaries.quiz && fallbackSummary) {
+    const normalizedFallback = normalizeStoredSummary(fallbackSummary);
+
+    if (normalizedFallback) {
+      normalizedSummaries[normalizedFallback.mode] = normalizedFallback;
+    }
+  }
+
+  return normalizedSummaries;
 }

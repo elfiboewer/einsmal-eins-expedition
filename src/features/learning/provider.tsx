@@ -4,6 +4,7 @@ import * as React from "react";
 
 import {
   ALL_TRAINING_FACTS,
+  CLASSIC_FAMILIES,
   getFactsForFocus,
   type FamilyFocus,
   type MultiplicationFact,
@@ -18,6 +19,7 @@ import {
   getWeakFacts,
   summarizeSession,
   type AnswerFeedback,
+  type LearningSessionMode,
   type MasteryRecord,
   type Question,
   type SessionSummary,
@@ -50,11 +52,26 @@ type SessionState = ActiveSession | CompletedSession | null;
 type LearningContextValue = {
   advanceSession: () => void;
   answerCurrent: (answer: number) => void;
+  completePracticeSession: (
+    focus: FamilyFocus,
+    feedbackItems: AnswerFeedback[],
+    mode?: LearningSessionMode
+  ) => SessionSummary;
   getFocusProgress: (focus: FamilyFocus) => number;
   isHydrated: boolean;
   lastCompletedSession: SessionSummary | null;
+  lastCompletedSessions: {
+    learn: SessionSummary | null;
+    quiz: SessionSummary | null;
+  };
   masteredFactCount: number;
   overallProgress: number;
+  recordPracticeAnswer: (
+    fact: MultiplicationFact,
+    answer: number,
+    responseMs: number,
+    mode?: LearningSessionMode
+  ) => AnswerFeedback;
   recommendedFocus: FamilyFocus;
   resetSession: () => void;
   session: SessionState;
@@ -89,11 +106,34 @@ export function LearningProvider({
   const [session, setSession] = React.useState<SessionState>(null);
   const [lastCompletedSession, setLastCompletedSession] =
     React.useState<SessionSummary | null>(null);
+  const [lastCompletedSessions, setLastCompletedSessions] = React.useState<{
+    learn: SessionSummary | null;
+    quiz: SessionSummary | null;
+  }>({
+    learn: null,
+    quiz: null,
+  });
+  const masteryMapRef = React.useRef(masteryMap);
+  const lastCompletedSessionRef = React.useRef(lastCompletedSession);
+  const lastCompletedSessionsRef = React.useRef(lastCompletedSessions);
+  const webSoundPlaybackBlockedRef = React.useRef(false);
 
   React.useEffect(() => {
     correctAnswerPlayer.volume = 0.45;
     wrongAnswerPlayer.volume = 0.38;
   }, [correctAnswerPlayer, wrongAnswerPlayer]);
+
+  React.useEffect(() => {
+    masteryMapRef.current = masteryMap;
+  }, [masteryMap]);
+
+  React.useEffect(() => {
+    lastCompletedSessionRef.current = lastCompletedSession;
+  }, [lastCompletedSession]);
+
+  React.useEffect(() => {
+    lastCompletedSessionsRef.current = lastCompletedSessions;
+  }, [lastCompletedSessions]);
 
   React.useEffect(() => {
     void setAudioModeAsync({
@@ -115,6 +155,10 @@ export function LearningProvider({
 
       setMasteryMap(storedState?.masteryMap ?? {});
       setLastCompletedSession(storedState?.lastCompletedSession ?? null);
+      setLastCompletedSessions({
+        learn: storedState?.lastCompletedSessions?.learn ?? null,
+        quiz: storedState?.lastCompletedSessions?.quiz ?? null,
+      });
       setIsHydrated(true);
     }
 
@@ -127,10 +171,15 @@ export function LearningProvider({
 
   async function persistState(
     nextMasteryMap: Record<string, MasteryRecord>,
-    nextSummary: SessionSummary | null
+    nextSummary: SessionSummary | null,
+    nextSummaries: {
+      learn: SessionSummary | null;
+      quiz: SessionSummary | null;
+    } = lastCompletedSessionsRef.current
   ) {
     await saveStoredLearningState({
       lastCompletedSession: nextSummary,
+      lastCompletedSessions: nextSummaries,
       masteryMap: nextMasteryMap,
     });
   }
@@ -152,6 +201,60 @@ export function LearningProvider({
     });
   }
 
+  function applyFeedback(feedback: AnswerFeedback) {
+    const nextMasteryMap = updateMasteryRecord(masteryMapRef.current, feedback);
+
+    masteryMapRef.current = nextMasteryMap;
+    setMasteryMap(nextMasteryMap);
+    void persistState(
+      nextMasteryMap,
+      lastCompletedSessionRef.current,
+      lastCompletedSessionsRef.current
+    );
+    void Haptics.notificationAsync(
+      feedback.correct
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Warning
+    );
+    void playFeedbackSound(feedback.correct);
+
+    return feedback;
+  }
+
+  function completePracticeSession(
+    focus: FamilyFocus,
+    feedbackItems: AnswerFeedback[],
+    mode: LearningSessionMode = "quiz"
+  ) {
+    const summary = summarizeSession(focus, feedbackItems, mode);
+    const nextSummaries = {
+      ...lastCompletedSessionsRef.current,
+      [mode]: summary,
+    };
+
+    lastCompletedSessionRef.current = summary;
+    lastCompletedSessionsRef.current = nextSummaries;
+    setLastCompletedSession(summary);
+    setLastCompletedSessions(nextSummaries);
+    void persistState(masteryMapRef.current, summary, nextSummaries);
+
+    return summary;
+  }
+
+  function recordPracticeAnswer(
+    fact: MultiplicationFact,
+    answer: number,
+    responseMs: number,
+    _mode: LearningSessionMode = "learn"
+  ) {
+    return applyFeedback({
+      correct: fact.product === answer,
+      fact,
+      responseMs,
+      selectedAnswer: answer,
+    });
+  }
+
   function answerCurrent(answer: number) {
     setSession((currentSession) => {
       if (
@@ -169,16 +272,7 @@ export function LearningProvider({
         responseMs,
         selectedAnswer: answer,
       };
-      const nextMasteryMap = updateMasteryRecord(masteryMap, feedback);
-
-      setMasteryMap(nextMasteryMap);
-      void persistState(nextMasteryMap, lastCompletedSession);
-      void Haptics.notificationAsync(
-        feedback.correct
-          ? Haptics.NotificationFeedbackType.Success
-          : Haptics.NotificationFeedbackType.Warning
-      );
-      void playFeedbackSound(feedback.correct);
+      applyFeedback(feedback);
 
       return {
         ...currentSession,
@@ -199,13 +293,11 @@ export function LearningProvider({
       }
 
       if (currentSession.results.length >= currentSession.length) {
-        const summary = summarizeSession(
+        const summary = completePracticeSession(
           currentSession.focus,
-          currentSession.results
+          currentSession.results,
+          "quiz"
         );
-
-        setLastCompletedSession(summary);
-        void persistState(masteryMap, summary);
 
         return {
           ...summary,
@@ -233,11 +325,55 @@ export function LearningProvider({
   async function playFeedbackSound(isCorrect: boolean) {
     const player = isCorrect ? correctAnswerPlayer : wrongAnswerPlayer;
 
+    if (process.env.EXPO_OS === "web") {
+      if (webSoundPlaybackBlockedRef.current) {
+        return;
+      }
+
+      const media = (
+        player as unknown as {
+          media?: {
+            currentTime?: number;
+            play?: () => Promise<unknown> | void;
+          };
+        }
+      ).media;
+
+      if (!media?.play) {
+        return;
+      }
+
+      try {
+        if (typeof media.currentTime === "number") {
+          media.currentTime = 0;
+        }
+
+        const playResult = media.play();
+
+        if (
+          playResult &&
+          typeof (playResult as Promise<unknown>).catch === "function"
+        ) {
+          await (playResult as Promise<unknown>).catch(() => {
+            webSoundPlaybackBlockedRef.current = true;
+          });
+        }
+      } catch {
+        webSoundPlaybackBlockedRef.current = true;
+      }
+
+      return;
+    }
+
     try {
       await player.seekTo(0);
       player.play();
     } catch {
-      player.play();
+      try {
+        player.play();
+      } catch {
+        // Ignore audio failures so feedback never breaks the game flow.
+      }
     }
   }
 
@@ -245,16 +381,22 @@ export function LearningProvider({
   const masteredFactCount = getMasteredFactCount(masteryMap);
   const weakFacts = getWeakFacts(masteryMap);
   const recommendedFocus = getRecommendedFocus(masteryMap);
-  const stickerCount = Math.max(1, Math.floor(masteredFactCount / 10) + 1);
+  const stickerCount =
+    CLASSIC_FAMILIES.filter(
+      (family) => getFocusProgress(family, masteryMap) >= 0.85
+    ).length + (overallProgress >= 0.92 ? 1 : 0);
 
   const value: LearningContextValue = {
     advanceSession,
     answerCurrent,
+    completePracticeSession,
     getFocusProgress: (focus) => getFocusProgress(focus, masteryMap),
     isHydrated,
     lastCompletedSession,
+    lastCompletedSessions,
     masteredFactCount,
     overallProgress,
+    recordPracticeAnswer,
     recommendedFocus,
     resetSession,
     session,

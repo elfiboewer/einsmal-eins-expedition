@@ -17,10 +17,15 @@ import { ProgressBar } from "@/components/progress-bar";
 import { SurfaceCard } from "@/components/surface-card";
 import {
   CLASSIC_FAMILIES,
+  formatFactExpression,
   getFocusTheme,
   type FamilyFocus,
   formatFamilyLabel,
 } from "@/features/learning/facts";
+import {
+  normalizeFocusParam,
+  stringifyFocusParam,
+} from "@/features/learning/focus";
 import { useLearning } from "@/features/learning/provider";
 import { palette } from "@/theme/palette";
 
@@ -37,7 +42,7 @@ export default function TrainingScreen() {
     session,
     startSession,
   } = useLearning();
-  const requestedFocus = normalizeFocus(params.focus);
+  const requestedFocus = normalizeFocusParam(params.focus);
   const lastAutoStartedFocusRef = React.useRef<FamilyFocus | null>(null);
   const shakeValue = React.useRef(new Animated.Value(0)).current;
   const [confettiTrigger, setConfettiTrigger] = React.useState(0);
@@ -132,7 +137,12 @@ export default function TrainingScreen() {
                 focus={focus}
                 progress={focus === "mixed" ? overallProgress : getFocusProgress(focus)}
                 width={tileWidth}
-                onPress={() => startSession(focus)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/mode-select",
+                    params: { focus: stringifyFocusParam(focus) },
+                  })
+                }
               />
             ))}
           </View>
@@ -330,9 +340,9 @@ export default function TrainingScreen() {
               fontWeight: "900",
               textAlign: "center",
             }}
-          >
-            {session.question.left} x {session.question.right}
-          </Text>
+        >
+          {formatFactExpression(session.question)}
+        </Text>
           <Text
             style={{
               color: palette.muted,
@@ -392,7 +402,7 @@ export default function TrainingScreen() {
           </Text>
           <Text style={{ color: palette.muted, fontSize: 15, lineHeight: 22 }}>
             {session.feedback.correct
-              ? `Stark. ${session.feedback.fact.left} x ${session.feedback.fact.right} = ${session.feedback.fact.product}.`
+              ? `Stark. ${formatFactExpression(session.feedback.fact)} = ${session.feedback.fact.product}.`
               : `Rot markiert deine Auswahl. Die grune Karte zeigt ${session.feedback.fact.product} als richtige Antwort.`}
           </Text>
           <Text style={{ color: palette.muted, fontSize: 14, fontWeight: "700" }}>
@@ -420,20 +430,6 @@ export default function TrainingScreen() {
       ) : null}
     </ScrollView>
   );
-}
-
-function normalizeFocus(value?: string): FamilyFocus | null {
-  if (value === "mixed") {
-    return "mixed";
-  }
-
-  const numericValue = Number(value);
-
-  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 10) {
-    return numericValue as Exclude<FamilyFocus, "mixed">;
-  }
-
-  return null;
 }
 
 function getNextFamily(focus: FamilyFocus): FamilyFocus | null {
